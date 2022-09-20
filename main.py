@@ -4,6 +4,7 @@ import traceback
 import discord
 from discord.ext import commands
 import dininghallmenu
+from keepalive import keep_alive
 
 # Set discord intents
 intents = discord.Intents.default()
@@ -68,6 +69,12 @@ async def menu(ctx, meal, *, hall):
 
     await ctx.send(embed=embed)
 
+# If this is running on REPL.IT, keep it alive after the tab closes with a web server
+# Set up a pinging service to keep it alive longer than an hour
+if "REPL_OWNER" in os.environ:
+    keep_alive()
+    print("Running on REPL.IT! Starting a keep-alive web-server.")
+    print("To keep this bot running long after the tab closes, set up a pinging service.")
 
 token = os.environ["TOKEN"]
 bot.run(token)
