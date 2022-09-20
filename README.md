@@ -1,2 +1,2 @@
 # queensu-menu-bot
-A discord bot to post the Queens University dininh hall menus before each meal
+A discord bot to post the Queen's University dining hall menus every morning
