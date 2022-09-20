@@ -1,4 +1,6 @@
 import os
+import traceback
+
 import discord
 from discord.ext import commands
 import dininghallmenu
@@ -44,13 +46,25 @@ async def menu(ctx, meal, *, hall):
         return
 
     # Get the menu from the queen's backend
-    menu_dict = await dininghallmenu.get_todays_menu(hall_id, meal)
+    embed = None
+    try:
+        menu_dict = await dininghallmenu.get_todays_menu(hall_id, meal)
 
-    # Create an embed message from the menu
-    embed = discord.Embed(title=f"{meal.title()} at {hall.title()} Hall", color=0xFF5733)
-    for key in menu_dict:
-        items_string = "\n".join(menu_dict[key])
-        embed.add_field(name=key, value=items_string)
+        # Create an embed message from the menu
+        embed = discord.Embed(title=f"{meal.title()} at {hall.title()} Hall", color=0xFF5733)
+        # Add every menu item into a field for its respective station
+        for key in menu_dict:
+            items_string = "\n".join(menu_dict[key])
+            embed.add_field(name=key, value=items_string)
+
+    # Let the users know what happened when a menu couldn't be found
+    except dininghallmenu.HallClosedError:
+        embed = discord.Embed(title=f"{hall.title()} Hall is not serving {meal.title()} today", color=0xb90e31)
+    except dininghallmenu.MenuApiError as error:
+        embed = discord.Embed(title=f"{meal.title()} at {hall.title()} Hall", color=0x002452,
+                              description="I ran into a problem finding the menu :(")
+        # Display the error in the log
+        traceback.print_exception(error)
 
     await ctx.send(embed=embed)
 

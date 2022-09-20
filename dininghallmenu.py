@@ -7,6 +7,14 @@ BAN_RIGH_HALL = 14628
 JEAN_ROYCE_HALL = 14629
 
 
+class HallClosedError(Exception):
+    pass
+
+
+class MenuApiError(Exception):
+    pass
+
+
 async def get_menu_json(building_id, meal, date):
     """
     Retrieves unfiltered menu data in json format for
@@ -43,12 +51,17 @@ async def get_todays_menu(building_id, meal):
         The meal to request the menu for.
         Valid values are "Breakfast", "Lunch", and "Dinner".
     """
+    # Get today's menu from the api
     date_string = datetime.now().strftime("%m-%d-%Y")
     json_data = await get_menu_json(building_id, meal, date_string)
 
-    if len(json_data["MealPeriods"]) == 0:
-        # Building is closed at this time!
-        pass
+    # Check that the menu was properly received
+    if "MealPeriods" not in json_data:
+        # The parameters might have been invalid
+        raise MenuApiError
+    elif len(json_data["MealPeriods"]) == 0:
+        # Building is closed at this time
+        raise HallClosedError
 
     # Organize the complex json data into a clean set of stations and item names
     menu = {}
