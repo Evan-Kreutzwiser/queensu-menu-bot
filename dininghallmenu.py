@@ -8,48 +8,42 @@ JEAN_ROYCE_HALL = 14629
 
 
 class HallClosedError(Exception):
+    """
+    Raised when a menu is requested for a time the dining hall is closed.
+    """
     pass
 
 
 class MenuApiError(Exception):
+    """
+    Raised when invalid arguments cause an issue retrieving the menu data.
+    """
     pass
 
 
-async def get_menu_json(building_id, meal, date):
+async def get_menu_json(building_id: int, meal: str, date: str):
     """
-    Retrieves unfiltered menu data in json format for
-    a specific dining hall, meal, and day.
+    Retrieves unfiltered menu data in json format for a specific dining hall, meal, and day.
 
-    Parameters
-        building_id : int
-            The numeric ID representing the building.
-            Valid IDs are provided as class constants.
-
-        meal : str
-            The meal to request the menu for.
-            Valid values are "Breakfast", "Lunch", and "Dinner".
-
-        date : str
-            The date to request the menu for in "MM-DD-YYYY" format.
+    :param building_id: The numeric ID representing the building
+    :param meal: The meal to request a menu for ("Breakfast", "Lunch", or "Dinner")
+    :param date: The date to request the menu for in "MM-DD-YYYY" format.
+    :return: The received json data as a python object
     """
     data = requests.get("https://dining.queensu.ca/wp-content/themes/housing/campusDishAPI.php",
                         params={"locationId": building_id, "mealPeriod": meal, "selDate": date})
     return json.loads(data.content)
 
 
-async def get_todays_menu(building_id, meal):
+async def get_todays_menu(building_id: int, meal: str) -> dict:
     """
-    Get the menu for the current date and extract
-    only the stations and item names.
+    Get the menu for the current date and extract just the station and item names.
 
-    Parameters
-      building_id : int
-        The numeric ID representing the building.
-        Valid IDs are provided as class constants.
-
-      meal : str
-        The meal to request the menu for.
-        Valid values are "Breakfast", "Lunch", and "Dinner".
+    :param building_id: The numeric ID representing the building
+    :param meal: The meal to request a menu for ("Breakfast", "Lunch", or "Dinner")
+    :return: A dictionary of each station with a list of the items served there
+    :raises HallClosedError: The dining hall is closed for this meal
+    :raises MenuApiError: Request arguments may be invalid
     """
     # Get today's menu from the api
     date_string = datetime.now().strftime("%m-%d-%Y")
