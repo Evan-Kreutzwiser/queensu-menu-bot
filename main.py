@@ -5,6 +5,8 @@ import discord
 from discord.ext import commands
 import dininghallmenu
 from keepalive import keep_alive
+from string import capwords
+
 
 # Set discord intents
 intents = discord.Intents.default()
@@ -31,13 +33,13 @@ async def on_message(message):
 
 @bot.command()
 async def menu(ctx, meal, *, hall):
-    if hall.lower() == "leonard":
-        hall_id = dininghallmenu.LEONARD_HALL
-    elif hall.lower() == "ban righ":
-        hall_id = dininghallmenu.BAN_RIGH_HALL
-    elif hall.lower() == "jean royce":
-        hall_id = dininghallmenu.JEAN_ROYCE_HALL
-    else:
+
+    if hall.lower() == "benry":
+        await ctx.send("No")
+        return
+
+    hall_id = dininghallmenu.hall_id_from_name(hall)
+    if hall_id == -1:  # Invalid hall name entered
         print(f"Invalid hall name\"{hall}\" used")
         await ctx.send("Sorry, I can only get the menu for Leonard, Ban Righ, and Jean Royce")
         return
@@ -52,7 +54,7 @@ async def menu(ctx, meal, *, hall):
         menu_dict = await dininghallmenu.get_todays_menu(hall_id, meal)
 
         # Create an embed message from the menu
-        embed = discord.Embed(title=f"{meal.title()} at {hall.title()} Hall", color=0xFF5733)
+        embed = discord.Embed(title=f"{capwords(meal)} at {capwords(hall)}", color=0xFF5733)
         # Add every menu item into a field for its respective station
         for key in menu_dict:
             items_string = "\n".join(menu_dict[key])
@@ -60,9 +62,9 @@ async def menu(ctx, meal, *, hall):
 
     # Let the users know what happened when a menu couldn't be found
     except dininghallmenu.HallClosedError:
-        embed = discord.Embed(title=f"{hall.title()} Hall is not serving {meal.title()} today", color=0xb90e31)
+        embed = discord.Embed(title=f"{capwords(hall)} is not serving {capwords(meal)} today", color=0xb90e31)
     except dininghallmenu.MenuApiError as error:
-        embed = discord.Embed(title=f"{meal.title()} at {hall.title()} Hall", color=0x002452,
+        embed = discord.Embed(title=f"{capwords(meal)} at {capwords(hall)}", color=0x002452,
                               description="I ran into a problem finding the menu :(")
         # Display the error in the log
         traceback.print_exception(error)

@@ -71,3 +71,15 @@ async def get_todays_menu(building_id: int, meal: str) -> dict:
         menu[station["Name"]] = menu_items
 
     return menu
+
+
+def hall_id_from_name(name: str) -> int:
+    """ Translate a dining hall's name to the building ID used to retrieve the menu """
+    if name.lower() in ["leonard", "leonard hall", "lenny", "shu's house"]:
+        return LEONARD_HALL
+    elif name.lower() in ["ban righ", "ban righ hall", "ban"]:
+        return BAN_RIGH_HALL
+    elif name.lower() in ["jean royce", "jean royce hall", "jean", "west"]:
+        return JEAN_ROYCE_HALL
+    else:
+        return -1
