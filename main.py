@@ -61,6 +61,28 @@ async def get_todays_menu_as_embed(hall_id: int, meal: str) -> discord.Embed:
 
 
 @bot.command()
+async def setmenuchannel(ctx, channel: discord.TextChannel = None):
+    """
+    Set which channel daily menus should be posted to.
+    Either provide a channel as an argument or default to the channel
+    this is called from.
+    """
+    # Default to the channel the user used the command in
+    if channel is None:
+        channel = ctx.channel
+
+    # Register the channel as where this guild receives daily messages
+    database.set_menu_channel(ctx.guild.id, channel.id)
+
+
+@bot.command()
+async def forgetmenuchannel(ctx):
+    """Stop sending daily menus to th guild"""
+    database.forget_menu_channel(ctx.guild.id)
+
+
+
+@bot.command()
 async def menu(ctx, meal, *, hall):
 
     if hall.lower() == "benry":
