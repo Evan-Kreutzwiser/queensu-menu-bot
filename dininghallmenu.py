@@ -83,3 +83,15 @@ def hall_id_from_name(name: str) -> int:
         return JEAN_ROYCE_HALL
     else:
         return -1
+
+
+def hall_name_from_id(hall_id: int) -> str:
+    """ Get the human-readable name for a dinning hall"""
+    if hall_id == LEONARD_HALL:
+        return "Leonard Hall"
+    elif hall_id == BAN_RIGH_HALL:
+        return "Ban Righ Hall"
+    elif hall_id == JEAN_ROYCE_HALL:
+        return "Jean Royce Hall"
+    else:
+        return ""

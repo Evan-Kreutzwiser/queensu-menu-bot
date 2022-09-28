@@ -31,6 +31,35 @@ async def on_message(message):
 """
 
 
+async def get_todays_menu_as_embed(hall_id: int, meal: str) -> discord.Embed:
+    """Create a discord embed message from today's menu
+
+    :param hall_id: Dinning hall to get the menu for
+    :param meal: Which meal to get a menu for (Breakfast, Lunch, Dinner)
+    :return: A completely ready to post discord embed
+    """
+    hall_name = dininghallmenu.hall_name_from_id(hall_id)
+    try:
+        menu_dict = await dininghallmenu.get_todays_menu(hall_id, meal)
+
+        # Create an embed message from the menu
+        embed = discord.Embed(title=f"{capwords(meal)} at {hall_name}", color=0xFF5733)
+        # Add every menu item into a field for its respective station
+        for key in menu_dict:
+            items_string = "\n".join(menu_dict[key])
+            embed.add_field(name=key, value=items_string)
+
+    # Let the users know what happened when a menu couldn't be found
+    except dininghallmenu.HallClosedError:
+        embed = discord.Embed(title=f"{hall_name} is not serving {capwords(meal)} today", color=0xb90e31)
+    except dininghallmenu.MenuApiError as error:
+        embed = discord.Embed(title=f"{capwords(meal)} at {hall_name}", color=0x002452,
+                              description="I ran into a problem finding the menu :(")
+        # Display the error in the log
+        traceback.print_exception(error)
+    return embed
+
+
 @bot.command()
 async def menu(ctx, meal, *, hall):
 
@@ -49,25 +78,7 @@ async def menu(ctx, meal, *, hall):
         return
 
     # Get the menu from the queen's backend
-    embed = None
-    try:
-        menu_dict = await dininghallmenu.get_todays_menu(hall_id, meal)
-
-        # Create an embed message from the menu
-        embed = discord.Embed(title=f"{capwords(meal)} at {capwords(hall)}", color=0xFF5733)
-        # Add every menu item into a field for its respective station
-        for key in menu_dict:
-            items_string = "\n".join(menu_dict[key])
-            embed.add_field(name=key, value=items_string)
-
-    # Let the users know what happened when a menu couldn't be found
-    except dininghallmenu.HallClosedError:
-        embed = discord.Embed(title=f"{capwords(hall)} is not serving {capwords(meal)} today", color=0xb90e31)
-    except dininghallmenu.MenuApiError as error:
-        embed = discord.Embed(title=f"{capwords(meal)} at {capwords(hall)}", color=0x002452,
-                              description="I ran into a problem finding the menu :(")
-        # Display the error in the log
-        traceback.print_exception(error)
+    embed = await get_todays_menu_as_embed(hall_id, meal)
 
     await ctx.send(embed=embed)
 
