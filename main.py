@@ -2,10 +2,11 @@ import os
 import traceback
 
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 import dininghallmenu
 from keepalive import keep_alive
 from string import capwords
+from datetime import datetime
 import database
 
 # Set discord intents
@@ -13,11 +14,13 @@ intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix='$', intents=intents)
 
+bot.previous_date = datetime.now().date()
 
 # Display bo start up in console
 @bot.event
 async def on_ready():
     print("Running as {0.user}".format(bot))
+    auto_menu.start()
     return
 
 """
@@ -81,7 +84,6 @@ async def forgetmenuchannel(ctx):
     database.forget_menu_channel(ctx.guild.id)
 
 
-
 @bot.command()
 async def menu(ctx, meal, *, hall):
 
@@ -105,6 +107,25 @@ async def menu(ctx, meal, *, hall):
     await ctx.send(embed=embed)
 
 
+@tasks.loop(minutes=45)
+async def auto_menu():
+    if datetime.now().hour == 1 and datetime.now().date() != bot.previous_date:
+        for id in database.get_menu_channels():
+            message_channel = bot.get_channel(id)
+            print(f"In channel {id}")
+            await message_channel.purge()
+            await message_channel.send(embed= await get_todays_menu_as_embed(dininghallmenu.LEONARD_HALL, "Breakfast"))
+            await message_channel.send(embed= await get_todays_menu_as_embed(dininghallmenu.LEONARD_HALL, "Lunch"))
+            await message_channel.send(embed= await get_todays_menu_as_embed(dininghallmenu.LEONARD_HALL, "Dinner"))
+            await message_channel.send(embed= await get_todays_menu_as_embed(dininghallmenu.BAN_RIGH_HALL, "Lunch"))
+            await message_channel.send(embed= await get_todays_menu_as_embed(dininghallmenu.BAN_RIGH_HALL, "Dinner"))
+            await message_channel.send(embed= await get_todays_menu_as_embed(dininghallmenu.JEAN_ROYCE_HALL, "Breakfast"))
+            await message_channel.send(embed= await get_todays_menu_as_embed(dininghallmenu.JEAN_ROYCE_HALL, "Lunch"))
+            await message_channel.send(embed= await get_todays_menu_as_embed(dininghallmenu.JEAN_ROYCE_HALL, "Dinner"))
+        bot.previous_date = datetime.now().date()
+
+
+# -----------------------------------------------------------------------------------------------
 # Make sure the table exists in the database
 database.init_db()
 
