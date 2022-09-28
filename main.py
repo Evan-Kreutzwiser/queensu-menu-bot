@@ -70,18 +70,26 @@ async def setmenuchannel(ctx, channel: discord.TextChannel = None):
     Either provide a channel as an argument or default to the channel
     this is called from.
     """
-    # Default to the channel the user used the command in
-    if channel is None:
-        channel = ctx.channel
+    # Only admins should be able to set where daily menus go
+    if ctx.author.guild_permissions.administrator:
+        # Default to the channel the user used the command in
+        if channel is None:
+            channel = ctx.channel
 
-    # Register the channel as where this guild receives daily messages
-    database.set_menu_channel(ctx.guild.id, channel.id)
+        # Register the channel as where this guild receives daily messages
+        database.set_menu_channel(ctx.guild.id, channel.id)
+    else:
+        await ctx.send("Sorry, you don't have permission to do that")
 
 
 @bot.command()
-async def forgetmenuchannel(ctx):
+async def forgetmenuchannel(ctx: commands.Context):
     """Stop sending daily menus to th guild"""
-    database.forget_menu_channel(ctx.guild.id)
+    # Only admins should be able to stop daily menu posts
+    if ctx.author.guild_permissions.administrator:
+        database.forget_menu_channel(ctx.guild.id)
+    else:
+        await ctx.send("Sorry, you don't have permission to do that")
 
 
 @bot.command()
@@ -109,19 +117,24 @@ async def menu(ctx, meal, *, hall):
 
 @tasks.loop(minutes=45)
 async def auto_menu():
+    """A looping task that posts every dining hall menu for the day automatically"""
+    # Run once a day at 1 AM
     if datetime.now().hour == 1 and datetime.now().date() != bot.previous_date:
-        for id in database.get_menu_channels():
-            message_channel = bot.get_channel(id)
-            print(f"In channel {id}")
+        # Post the menus in every server that specified a channel
+        for channel_id in database.get_menu_channels():
+            message_channel = bot.get_channel(channel_id)
+            print(f"In channel {channel_id}")
+            # Empty the channel top show only today's menus
             await message_channel.purge()
-            await message_channel.send(embed= await get_todays_menu_as_embed(dininghallmenu.LEONARD_HALL, "Breakfast"))
-            await message_channel.send(embed= await get_todays_menu_as_embed(dininghallmenu.LEONARD_HALL, "Lunch"))
-            await message_channel.send(embed= await get_todays_menu_as_embed(dininghallmenu.LEONARD_HALL, "Dinner"))
-            await message_channel.send(embed= await get_todays_menu_as_embed(dininghallmenu.BAN_RIGH_HALL, "Lunch"))
-            await message_channel.send(embed= await get_todays_menu_as_embed(dininghallmenu.BAN_RIGH_HALL, "Dinner"))
-            await message_channel.send(embed= await get_todays_menu_as_embed(dininghallmenu.JEAN_ROYCE_HALL, "Breakfast"))
-            await message_channel.send(embed= await get_todays_menu_as_embed(dininghallmenu.JEAN_ROYCE_HALL, "Lunch"))
-            await message_channel.send(embed= await get_todays_menu_as_embed(dininghallmenu.JEAN_ROYCE_HALL, "Dinner"))
+            # Post menus for every meal at all 3 halls
+            await message_channel.send(embed=await get_todays_menu_as_embed(dininghallmenu.LEONARD_HALL, "Breakfast"))
+            await message_channel.send(embed=await get_todays_menu_as_embed(dininghallmenu.LEONARD_HALL, "Lunch"))
+            await message_channel.send(embed=await get_todays_menu_as_embed(dininghallmenu.LEONARD_HALL, "Dinner"))
+            await message_channel.send(embed=await get_todays_menu_as_embed(dininghallmenu.BAN_RIGH_HALL, "Lunch"))
+            await message_channel.send(embed=await get_todays_menu_as_embed(dininghallmenu.BAN_RIGH_HALL, "Dinner"))
+            await message_channel.send(embed=await get_todays_menu_as_embed(dininghallmenu.JEAN_ROYCE_HALL, "Breakfast"))
+            await message_channel.send(embed=await get_todays_menu_as_embed(dininghallmenu.JEAN_ROYCE_HALL, "Lunch"))
+            await message_channel.send(embed=await get_todays_menu_as_embed(dininghallmenu.JEAN_ROYCE_HALL, "Dinner"))
         bot.previous_date = datetime.now().date()
 
 
