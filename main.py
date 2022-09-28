@@ -6,7 +6,7 @@ from discord.ext import commands
 import dininghallmenu
 from keepalive import keep_alive
 from string import capwords
-
+import database
 
 # Set discord intents
 intents = discord.Intents.default()
@@ -70,6 +70,10 @@ async def menu(ctx, meal, *, hall):
         traceback.print_exception(error)
 
     await ctx.send(embed=embed)
+
+
+# Make sure the table exists in the database
+database.init_db()
 
 # If this is running on REPL.IT, keep it alive after the tab closes with a web server
 # Set up a pinging service to keep it alive longer than an hour
