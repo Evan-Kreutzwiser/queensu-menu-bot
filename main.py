@@ -2,19 +2,29 @@ import os
 import traceback
 
 import discord
-from discord.ext import commands, tasks
+from discord import app_commands
+from discord.ext import tasks
 import dininghallmenu
 from keepalive import keep_alive
 from string import capwords
 from datetime import datetime
 import database
 
+
+class MenuClient(discord.Client):
+    def __init__(self, *, intents: discord.Intents):
+        super().__init__(intents=intents)
+        # The command tree holds the application slash command state.
+        # The bot maintains its own tree similar to this when using @Bot.Command(
+        self.tree = app_commands.CommandTree(self)
+
+
 # Set discord intents
 intents = discord.Intents.default()
-intents.message_content = True
-bot = commands.Bot(command_prefix='$', intents=intents)
+bot = MenuClient(intents=intents)
 
 bot.previous_date = datetime.now().date()
+
 
 # Display bo start up in console
 @bot.event
@@ -63,56 +73,65 @@ async def get_todays_menu_as_embed(hall_id: int, meal: str) -> discord.Embed:
     return embed
 
 
-@bot.command()
-async def setmenuchannel(ctx, channel: discord.TextChannel = None):
+@bot.tree.command()
+@app_commands.describe(
+    channel="(Optional) Which channel to post the menus in"
+)
+async def setmenuchannel(interaction: discord.Interaction, channel: discord.TextChannel = None):
     """
     Set which channel daily menus should be posted to.
-    Either provide a channel as an argument or default to the channel
-    this is called from.
+
+    Defaults to the current channel when not provided.
     """
     # Only admins should be able to set where daily menus go
-    if ctx.author.guild_permissions.administrator:
+    if interaction.user.guild_permissions.administrator:
         # Default to the channel the user used the command in
         if channel is None:
-            channel = ctx.channel
+            channel = interaction.channel
 
         # Register the channel as where this guild receives daily messages
-        database.set_menu_channel(ctx.guild.id, channel.id)
+        database.set_menu_channel(interaction.guild_id, channel.id)
+        await interaction.response.send_message(f"Ok, I'll post automatic menus in #{channel.name}")
     else:
-        await ctx.send("Sorry, you don't have permission to do that")
+        await interaction.response.send_message("Sorry, you don't have permission to do that")
 
 
-@bot.command()
-async def forgetmenuchannel(ctx: commands.Context):
-    """Stop sending daily menus to th guild"""
+@bot.tree.command()
+async def forgetmenuchannel(interaction: discord.Interaction):
+    """Stop sending daily menus to the guild"""
     # Only admins should be able to stop daily menu posts
-    if ctx.author.guild_permissions.administrator:
-        database.forget_menu_channel(ctx.guild.id)
+    if interaction.user.guild_permissions.administrator:
+        database.forget_menu_channel(interaction.guild_id)
+        await interaction.response.send_message("Ok, I won't post daily menus in this server anymore")
     else:
-        await ctx.send("Sorry, you don't have permission to do that")
+        await interaction.response.send_message("Sorry, you don't have permission to do that")
 
 
-@bot.command()
-async def menu(ctx, meal, *, hall):
+@bot.tree.command()
+@app_commands.describe(
+    meal="Breakfast, Lunch, or Dinner",
+    hall="The dinning hall to get the menu for"
+)
+async def menu(interation: discord.Interaction, meal: str, *, hall: str):
 
     if hall.lower() == "benry":
-        await ctx.send("No")
+        await interation.response.send_message("No")
         return
 
     hall_id = dininghallmenu.hall_id_from_name(hall)
     if hall_id == -1:  # Invalid hall name entered
         print(f"Invalid hall name\"{hall}\" used")
-        await ctx.send("Sorry, I can only get the menu for Leonard, Ban Righ, and Jean Royce")
+        await interation.response.send_message("Sorry, I can only get the menu for Leonard, Ban Righ, and Jean Royce")
         return
 
     if not (meal.lower() == "breakfast" or meal.lower() == "lunch" or meal.lower() == "dinner"):
-        await ctx.send("I can only find menus for breakfast, lunch, and dinner")
+        await interation.response.send_message("I can only find menus for breakfast, lunch, and dinner")
         return
 
     # Get the menu from the queen's backend
     embed = await get_todays_menu_as_embed(hall_id, meal)
 
-    await ctx.send(embed=embed)
+    await interation.response.send_message(embed=embed)
 
 
 @tasks.loop(minutes=45)
