@@ -1,5 +1,6 @@
 import os
 import traceback
+from typing import Literal
 
 import discord
 from discord import app_commands
@@ -31,7 +32,17 @@ bot.previous_date = datetime.now().date()
 async def on_ready():
     print("Running as {0.user}".format(bot))
     auto_menu.start()
+    # Sync commands with every server the bot is in
+    await bot.tree.sync()
     return
+
+
+@bot.event
+async def on_guild_join(guild: discord.Guild):
+    """Ensure newly added servers can access slash commands"""
+    print(f"Joined \"{guild.name}\" (guild id: {guild.id})")
+    await bot.tree.sync(guild=guild)
+
 
 """
 @client.event
@@ -109,11 +120,13 @@ async def forgetmenuchannel(interaction: discord.Interaction):
 
 @bot.tree.command()
 @app_commands.describe(
-    meal="Breakfast, Lunch, or Dinner",
+    meal="Which meal to get the menu for",
     hall="The dinning hall to get the menu for"
 )
-async def menu(interation: discord.Interaction, meal: str, *, hall: str):
-
+async def menu(interation: discord.Interaction,
+               meal: Literal["Breakfast", "Lunch", "Dinner"],
+               hall: Literal["Leonard", "Ban Righ", "Jean Royce"]):
+    """Get the menu for a specific meal at a dining hall"""
     if hall.lower() == "benry":
         await interation.response.send_message("No")
         return
