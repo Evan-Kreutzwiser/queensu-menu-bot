@@ -52,6 +52,26 @@ def forget_menu_channel(guild_id: int):
     db.commit()
 
 
+def get_menu_channel(guild_id: int) -> (int, None):
+    """Gets the channel id for this server's daily menus,
+    or None if one has not been set
+
+    :param guild_id: The id of the guild to query, or none if one was not set
+    """
+    db = connect_db()
+    cursor = db.cursor()
+    # Get the channel id for this guild from the database
+    cursor.execute("SELECT Channel FROM Channels WHERE Guild = (?)", (guild_id, ))
+    channel_id = cursor.fetchone()
+    cursor.close()
+    db.commit()
+    # Database returns none if no channel is found, pass it through to the caller
+    if channel_id is None:
+        return None
+    # The database returns the id as a single element tuple, just want the int
+    return channel_id[0]
+
+
 def get_menu_channels() -> list:
     """Returns a list of every channel registered to receive daily menus"""
     db = connect_db()

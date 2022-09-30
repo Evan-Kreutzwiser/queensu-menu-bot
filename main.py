@@ -108,6 +108,17 @@ async def setmenuchannel(interaction: discord.Interaction, channel: discord.Text
 
 
 @bot.tree.command()
+async def getmenuchannel(interaction: discord.Interaction):
+    """Display which channel is set to receive daily menus"""
+    channel_id = database.get_menu_channel(interaction.guild_id)
+    if channel_id is None:
+        await interaction.response.send_message("There isn't a channel selected for daily menus")
+        return
+
+    await interaction.response.send_message(f"Daily menus go in {bot.get_channel(channel_id).mention}")
+
+
+@bot.tree.command()
 async def forgetmenuchannel(interaction: discord.Interaction):
     """Stop sending daily menus to the guild"""
     # Only admins should be able to stop daily menu posts
