@@ -1,3 +1,4 @@
+import json
 import os
 import traceback
 from typing import Literal
@@ -76,9 +77,12 @@ async def get_todays_menu_as_embed(hall_id: int, meal: str) -> discord.Embed:
     # Let the users know what happened when a menu couldn't be found
     except dininghallmenu.HallClosedError:
         embed = discord.Embed(title=f"{hall_name} is not serving {capwords(meal)} today", color=0xb90e31)
-    except dininghallmenu.MenuApiError as error:
+    except (dininghallmenu.MenuApiError, json.JSONDecodeError) as error:
+        description = "The menu format might have changed" if error is dininghallmenu.MenuApiError else \
+            "The menus might have been moved again"
         embed = discord.Embed(title=f"{capwords(meal)} at {hall_name}", color=0x002452,
                               description="I ran into a problem finding the menu :(")
+        embed.add_field(name="Issue", value=description)
         # Display the error in the log
         traceback.print_exception(error)
     return embed
@@ -163,6 +167,18 @@ async def auto_menu():
     """A looping task that posts every dining hall menu for the day automatically"""
     # Run once a day at 1 AM
     if datetime.now().hour == 1 and datetime.now().date() != bot.previous_date:
+        # Cache all the menus, so we only have to get them once
+        menus = [
+            await get_todays_menu_as_embed(dininghallmenu.LEONARD_HALL, "Breakfast"),
+            await get_todays_menu_as_embed(dininghallmenu.LEONARD_HALL, "Lunch"),
+            await get_todays_menu_as_embed(dininghallmenu.LEONARD_HALL, "Dinner"),
+            await get_todays_menu_as_embed(dininghallmenu.BAN_RIGH_HALL, "Lunch"),
+            await get_todays_menu_as_embed(dininghallmenu.BAN_RIGH_HALL, "Dinner"),
+            await get_todays_menu_as_embed(dininghallmenu.JEAN_ROYCE_HALL, "Breakfast"),
+            await get_todays_menu_as_embed(dininghallmenu.JEAN_ROYCE_HALL, "Lunch"),
+            await get_todays_menu_as_embed(dininghallmenu.JEAN_ROYCE_HALL, "Dinner")
+        ]
+
         # Post the menus in every server that specified a channel
         for channel_id in database.get_menu_channels():
             message_channel = bot.get_channel(channel_id)
@@ -170,14 +186,9 @@ async def auto_menu():
             # Empty the channel top show only today's menus
             await message_channel.purge()
             # Post menus for every meal at all 3 halls
-            await message_channel.send(embed=await get_todays_menu_as_embed(dininghallmenu.LEONARD_HALL, "Breakfast"))
-            await message_channel.send(embed=await get_todays_menu_as_embed(dininghallmenu.LEONARD_HALL, "Lunch"))
-            await message_channel.send(embed=await get_todays_menu_as_embed(dininghallmenu.LEONARD_HALL, "Dinner"))
-            await message_channel.send(embed=await get_todays_menu_as_embed(dininghallmenu.BAN_RIGH_HALL, "Lunch"))
-            await message_channel.send(embed=await get_todays_menu_as_embed(dininghallmenu.BAN_RIGH_HALL, "Dinner"))
-            await message_channel.send(embed=await get_todays_menu_as_embed(dininghallmenu.JEAN_ROYCE_HALL, "Breakfast"))
-            await message_channel.send(embed=await get_todays_menu_as_embed(dininghallmenu.JEAN_ROYCE_HALL, "Lunch"))
-            await message_channel.send(embed=await get_todays_menu_as_embed(dininghallmenu.JEAN_ROYCE_HALL, "Dinner"))
+            for menu_embed in menus:
+                await message_channel.send(embed=menu_embed)
+
         bot.previous_date = datetime.now().date()
 
 

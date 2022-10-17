@@ -30,6 +30,8 @@ async def get_menu_json(building_id: int, meal: str, date: str):
     :param date: The date to request the menu for in "MM-DD-YYYY" format.
     :return: The received json data as a python object
     """
+    # Make a request to the same api the official dining hall site uses
+    # If the api moves again and the response isn't json, the error is handled during embed message creation
     data = requests.get("https://studentweb.housing.queensu.ca/public/campusDishAPI/campusDishAPI.php",
                         params={"locationId": building_id, "mealPeriod": meal, "selDate": date})
     return json.loads(data.content)
