@@ -68,7 +68,7 @@ async def get_todays_menu_as_embed(hall_id: int, meal: str) -> discord.Embed:
         menu_dict = await dininghallmenu.get_todays_menu(hall_id, meal)
 
         # Create an embed message from the menu
-        embed = discord.Embed(title=f"{capwords(meal)} at {hall_name}", color=colour_assiosiated_with_meal(meal))
+        embed = discord.Embed(title=f"{capwords(meal)} at {hall_name}", color=dininghallmenu.colour_assiosiated_with_meal(meal))
         # Add every menu item into a field for its respective station
         for key in menu_dict:
             items_string = "\n".join(menu_dict[key])
