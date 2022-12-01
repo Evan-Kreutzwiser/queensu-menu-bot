@@ -143,7 +143,7 @@ async def menu(interation: discord.Interaction,
                hall: Literal["Leonard", "Ban Righ", "Jean Royce"]):
     """Get the menu for a specific meal at a dining hall"""
     if hall.lower() == "benry":
-        await interation.response.send_message("Yes")
+        await interation.response.send_message("Stop")
         return
 
     hall_id = dininghallmenu.hall_id_from_name(hall)
