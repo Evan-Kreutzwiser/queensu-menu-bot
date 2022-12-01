@@ -68,7 +68,7 @@ async def get_todays_menu_as_embed(hall_id: int, meal: str) -> discord.Embed:
         menu_dict = await dininghallmenu.get_todays_menu(hall_id, meal)
 
         # Create an embed message from the menu
-        embed = discord.Embed(title=f"{capwords(meal)} at {hall_name}", color=0xFF5733)
+        embed = discord.Embed(title=f"{capwords(meal)} at {hall_name}", color=colour_assiosiated_with_meal(meal))
         # Add every menu item into a field for its respective station
         for key in menu_dict:
             items_string = "\n".join(menu_dict[key])
@@ -143,7 +143,7 @@ async def menu(interation: discord.Interaction,
                hall: Literal["Leonard", "Ban Righ", "Jean Royce"]):
     """Get the menu for a specific meal at a dining hall"""
     if hall.lower() == "benry":
-        await interation.response.send_message("No")
+        await interation.response.send_message("Yes")
         return
 
     hall_id = dininghallmenu.hall_id_from_name(hall)
