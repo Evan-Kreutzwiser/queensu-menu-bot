@@ -97,3 +97,15 @@ def hall_name_from_id(hall_id: int) -> str:
         return "Jean Royce Hall"
     else:
         return ""
+
+
+def colour_assiosiated_with_meal(meal: str) -> int:
+    """ Get the colour assosiated with any meal"""
+    if meal == "Breakfast":
+        return 0xFCFF00
+    elif meal == "Lunch":
+        return 0x00C819
+    elif meal == "Dinner":
+        return 0x002787
+    else:
+        return 0xFF5733
